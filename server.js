@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('os');
 const path = require('path');
 const express = require('express');
 
@@ -49,6 +50,33 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Something went wrong on the server.' });
 });
 
+/** The addresses other computers in the office should type in. */
+function lanAddresses() {
+  const found = [];
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const entry of interfaces[name] || []) {
+      if (entry.family === 'IPv4' && !entry.internal) found.push(entry.address);
+    }
+  }
+  return found;
+}
+
 app.listen(PORT, HOST, () => {
-  console.log(`Asset register running at http://localhost:${PORT}`);
+  console.log('');
+  console.log('  Asset register is running.');
+  console.log(`    On this computer      : http://localhost:${PORT}`);
+
+  const addresses = lanAddresses();
+  if (addresses.length && HOST !== '127.0.0.1' && HOST !== 'localhost') {
+    addresses.forEach((address, index) => {
+      const label = index === 0 ? 'From other computers  ' : '                      ';
+      console.log(`    ${label}: http://${address}:${PORT}`);
+    });
+  } else if (!addresses.length) {
+    console.log('    (no office network found - only this computer can open it)');
+  }
+  console.log('');
+  console.log('  Keep this window open. Closing it stops the register.');
+  console.log('');
 });

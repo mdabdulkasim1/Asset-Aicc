@@ -145,10 +145,28 @@ your shell history.
 
 Everything lives in one file: **`data/assets.db`**.
 
-- To back up, copy that file (together with `data/assets.db-wal` if present) while the app
-  is stopped, or simply copy the whole `data` folder daily to a pen drive or shared folder.
-- To move the system to another computer, copy the project folder including `data`, run
-  `npm install`, then `npm start`.
+Take a backup with one command - it works even while people are using the register, and
+always produces a complete, openable copy:
+
+```bash
+npm run backup                          # into ./backups
+npm run backup -- D:\AssetBackups       # into a folder you choose
+npm run backup -- /mnt/usb --keep 30    # and keep only the newest 30 copies
+```
+
+Point it at a pen drive, a shared folder or a synced folder (OneDrive, Google Drive) and it
+is off the machine as well. To run it every night without thinking about it:
+
+- **Windows** - Task Scheduler, daily, action `npm` with arguments `run backup -- D:\AssetBackups`,
+  started in the project folder.
+- **Linux** - `crontab -e`, then
+  `0 21 * * * cd /opt/asset-register && /usr/bin/npm run backup -- /mnt/backup`
+
+To restore, stop the register, copy the backup over `data/assets.db` (delete any
+`assets.db-wal` and `assets.db-shm` beside it), and start it again.
+
+To move the system to another computer, copy the project folder including `data`, run
+`npm ci --omit=dev`, then `npm start`.
 
 ---
 
@@ -209,10 +227,20 @@ sudo journalctl -u asset-register -n 30      # the first admin password is in he
 
 ### c) On an office Windows PC
 
-Install Node.js, copy the folder in, then in that folder run `npm ci --omit=dev` once and
-`npm start` to use it. To have it come back after a restart, either add a shortcut to
-`shell:startup`, or install it as a service with a tool such as
-[NSSM](https://nssm.cc) pointing at `node server.js`.
+Install [Node.js](https://nodejs.org) (the LTS download), copy the project folder onto the
+PC, then **double-click `start-windows.bat`**. It installs what it needs the first time and
+starts the register; leave that window open while people are using it.
+
+To have it start by itself after a reboot, press `Win+R`, type `shell:startup`, and put a
+shortcut to `start-windows.bat` in the folder that opens. For a proper background service
+that runs with nobody logged in, use [NSSM](https://nssm.cc) pointing at `node server.js`
+in the project folder.
+
+When the register starts it prints the address the other computers should use, e.g.
+`http://192.168.1.25:3000`. Give that to the asset controllers; nothing needs installing on
+their machines, only a browser. If they cannot reach it, allow Node.js through the Windows
+firewall on the private network, and give that PC a fixed IP address so the link keeps
+working.
 
 ### Reaching it from outside the office
 
