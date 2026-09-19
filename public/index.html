@@ -21,7 +21,10 @@
     </div>
     <div class="field" style="margin-bottom:18px">
       <label for="login-password">Password</label>
-      <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      <div class="pw-wrap">
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button type="button" class="pw-eye" data-for="login-password" aria-label="Show password" aria-pressed="false"></button>
+      </div>
     </div>
     <button class="btn block" type="submit" id="login-submit">Sign in</button>
   </form>

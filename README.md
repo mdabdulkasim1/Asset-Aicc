@@ -106,6 +106,29 @@ first sign-in.
 | **Asset Controller** | Add and edit assets, print stickers, verify, export |
 | **Owner** | Read only - dashboard, asset register, reports, activity log |
 
+Every password box has an eye button - press it to check what you typed before signing in
+or saving.
+
+### If a password is forgotten
+
+Run this on the computer that holds the database:
+
+```bash
+npm run reset-password -- admin
+```
+
+It sets a fresh password, prints it on screen, and asks that user to choose their own at
+their next sign-in. Other forms:
+
+```bash
+npm run reset-password -- --list                 # show the logins
+npm run reset-password -- kasim.ctrl 'NewPass12' # set one yourself
+npm run reset-password -- kasim.ctrl --enable    # also switch a disabled login back on
+```
+
+Leaving the password out is safer, because one you type on the command line is kept in
+your shell history.
+
 ---
 
 ## 5. Companies and categories
@@ -166,12 +189,13 @@ Caddy in front of it) so passwords are not sent in the clear.
 | Barcode | Code 128 drawn as SVG by `public/js/barcode.js` - no internet needed to print |
 
 ```
-server.js            starts the web server
-src/db.js            database schema, default companies and categories
-src/auth.js          tokens, password hashing, role guards
-src/codes.js         asset code and S.NO generation
-src/routes/          auth, users, companies/categories, assets, reports
-public/              the screens (index.html, css, js)
-scripts/seed-demo.js sample data
-data/assets.db       your data
+server.js                 starts the web server
+src/db.js                 database schema, default companies and categories
+src/auth.js               tokens, password hashing, role guards
+src/codes.js              asset code and S.NO generation
+src/routes/               auth, users, companies/categories, assets, reports
+public/                   the screens (index.html, css, js)
+scripts/seed-demo.js     sample data
+scripts/reset-password.js forgotten-password reset
+data/assets.db            your data
 ```

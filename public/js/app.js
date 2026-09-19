@@ -88,6 +88,59 @@
     return !!node && node.checked;
   }
 
+  var EYE_SHOW =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M1.8 12S5.4 5.8 12 5.8 22.2 12 22.2 12 18.6 18.2 12 18.2 1.8 12 1.8 12Z"/>' +
+    '<circle cx="12" cy="12" r="3.1"/></svg>';
+
+  var EYE_HIDE =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M1.8 12S5.4 5.8 12 5.8 22.2 12 22.2 12 18.6 18.2 12 18.2 1.8 12 1.8 12Z"/>' +
+    '<circle cx="12" cy="12" r="3.1"/><line x1="3.5" y1="3.5" x2="20.5" y2="20.5"/></svg>';
+
+  /** The eye button that shows or hides what is typed in a password box. */
+  function eyeButton(inputId) {
+    return (
+      '<button type="button" class="pw-eye" data-for="' + inputId +
+      '" aria-label="Show password" aria-pressed="false">' + EYE_SHOW + '</button>'
+    );
+  }
+
+  function passwordField(id, label, opts) {
+    var o = opts || {};
+    return (
+      '<div class="field' + (o.span ? ' span-' + o.span : '') + '"' +
+      (o.style ? ' style="' + o.style + '"' : '') + '>' +
+      '<label for="' + id + '">' + esc(label) + (o.required ? ' <span class="req">*</span>' : '') + '</label>' +
+      '<div class="pw-wrap"><input id="' + id + '" type="password" autocomplete="' +
+      (o.autocomplete || 'new-password') + '">' + eyeButton(id) + '</div>' +
+      (o.help ? '<span class="help">' + esc(o.help) + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  // One listener for every eye button on every screen, including the sign-in card.
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest && event.target.closest('.pw-eye');
+    if (!button) return;
+    var input = document.getElementById(button.getAttribute('data-for'));
+    if (!input) return;
+    var reveal = input.type === 'password';
+    input.type = reveal ? 'text' : 'password';
+    button.innerHTML = reveal ? EYE_HIDE : EYE_SHOW;
+    button.setAttribute('aria-pressed', reveal ? 'true' : 'false');
+    button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+    input.focus();
+  });
+
+  // The sign-in card is in the page from the start, so fill its button in now.
+  (function () {
+    var loginEye = document.querySelector('#login-view .pw-eye');
+    if (loginEye) loginEye.innerHTML = EYE_SHOW;
+  })();
+
   function companyOptions(selected) {
     return state.companies
       .filter(function (c) {
@@ -1186,7 +1239,10 @@
         '<option value="owner">Owner - can see everything, cannot change</option>' +
         '<option value="admin">Admin - full control</option>' +
         '</select></div>' +
-        fieldText('u-password', 'Password', { type: 'password', required: true, help: 'At least 6 characters. The user is asked to change it at first login.' }) +
+        passwordField('u-password', 'Password', {
+          required: true,
+          help: 'At least 6 characters. The user is asked to change it at first login.',
+        }) +
         '</div><div class="toolbar" style="margin-top:12px">' +
         '<button class="btn" id="u-add" type="button">Create login</button></div></div>' +
         '<div class="card"><div class="table-wrap"><table><thead><tr>' +
@@ -1271,12 +1327,12 @@
       '<div class="card" style="max-width:460px">' +
       (forced ? '<div class="alert info">You are using the password given to you. Set a new one now.</div>' : '') +
       '<div id="pw-error" class="alert error hidden"></div>' +
-      '<div class="field" style="margin-bottom:12px"><label for="pw-current">Current password</label>' +
-      '<input id="pw-current" type="password" autocomplete="current-password"></div>' +
-      '<div class="field" style="margin-bottom:12px"><label for="pw-new">New password</label>' +
-      '<input id="pw-new" type="password" autocomplete="new-password"></div>' +
-      '<div class="field" style="margin-bottom:16px"><label for="pw-confirm">Repeat new password</label>' +
-      '<input id="pw-confirm" type="password" autocomplete="new-password"></div>' +
+      passwordField('pw-current', 'Current password', {
+        autocomplete: 'current-password',
+        style: 'margin-bottom:12px',
+      }) +
+      passwordField('pw-new', 'New password', { style: 'margin-bottom:12px' }) +
+      passwordField('pw-confirm', 'Repeat new password', { style: 'margin-bottom:16px' }) +
       '<button class="btn" id="pw-save" type="button">Save password</button></div>';
 
     on('#pw-save', 'click', function () {
