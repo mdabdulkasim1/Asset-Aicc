@@ -1,7 +1,8 @@
 'use strict';
 
 const express = require('express');
-const { db } = require('../db');
+const { db, DATA_DIR, DB_FILE } = require('../db');
+const { describeStorage } = require('../storage');
 const { requireRole } = require('../auth');
 
 const router = express.Router();
@@ -118,6 +119,11 @@ router.get('/summary', (_req, res) => {
     recent,
     warranty_expiring: warrantyExpiring,
   });
+});
+
+/** Where the data sits and whether it survives a restart. Read fresh each time. */
+router.get('/storage', requireRole('admin', 'owner'), (_req, res) => {
+  res.json({ storage: describeStorage(DATA_DIR, DB_FILE) });
 });
 
 router.get('/activity', requireRole('admin', 'owner'), (req, res) => {

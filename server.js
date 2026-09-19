@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 const express = require('express');
 
-const { DATA_DIR } = require('./src/db');
+const { DATA_DIR, DB_FILE, STORAGE } = require('./src/db');
 const { attachUser, requireAuth } = require('./src/auth');
 const authRoutes = require('./src/routes/auth');
 const userRoutes = require('./src/routes/users');
@@ -135,6 +135,24 @@ server.listen(PORT, HOST, () => {
     console.log('    Tip: run "npm run make-cert" to serve this over https, which is what');
     console.log('         phones need before they will install it as an app.');
   }
+  const megabytes = (STORAGE.db_size_bytes / 1024 / 1024).toFixed(2);
+  console.log('');
+  console.log(`  Data     : ${DB_FILE}`);
+  console.log(
+    `             ${STORAGE.db_exists ? `existing register, ${megabytes} MB` : 'new, empty register'}` +
+      (STORAGE.volume_mount ? ` on the disk mounted at ${STORAGE.volume_mount}` : '')
+  );
+
+  if (!STORAGE.persistent) {
+    console.log('');
+    console.log('  !! THIS FOLDER IS NOT ON A MOUNTED DISK.');
+    console.log('  !! Everything entered will be lost the next time this container restarts.');
+    console.log('  !! Mount a volume, and either mount it here or point DATA_DIR at it.');
+  } else if (!STORAGE.writable) {
+    console.log('');
+    console.log('  !! This folder cannot be written to, so nothing can be saved.');
+  }
+
   console.log('');
   console.log('  Keep this window open. Closing it stops the register.');
   console.log('');

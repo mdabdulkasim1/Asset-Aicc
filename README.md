@@ -257,9 +257,14 @@ working.
 The repo carries a `Dockerfile` and a `railway.json`, so Railway builds and starts it with
 no extra setup. Two settings matter, and the first one is not optional:
 
-1. **Attach a volume mounted at `/data`.** Railway service → *Settings* → *Volumes* → new
-   volume, mount path `/data`. The whole register is one file inside that folder. Without a
-   volume every deploy starts from an empty register and the previous assets are gone.
+1. **Attach a volume.** Railway service → *Settings* → *Volumes* → new volume. The register
+   writes to whatever path the volume is mounted at, so any path works - the app follows
+   `RAILWAY_VOLUME_MOUNT_PATH` and says so at startup. Without a volume every deploy starts
+   from an empty register and the previous assets are gone.
+
+   The dashboard shows a red warning, and the log says `THIS FOLDER IS NOT ON A MOUNTED
+   DISK`, whenever the register is writing somewhere that will not survive a restart - so
+   you never have to guess whether the data is safe.
 2. **Set the admin login before the first start** - service → *Variables* → **two separate
    variables**, each holding only its value:
 

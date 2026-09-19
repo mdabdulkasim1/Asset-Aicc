@@ -4,11 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
+const { describeStorage, resolveDataDir } = require('./storage');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const resolved = resolveDataDir();
+const DATA_DIR = resolved.dir;
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'assets.db');
 
+resolved.notes.forEach((note) => console.warn(` ! ${note}`));
+
 fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const STORAGE = describeStorage(DATA_DIR, DB_FILE);
 
 const db = new Database(DB_FILE);
 db.pragma('journal_mode = WAL');
@@ -333,4 +339,4 @@ function seed() {
 
 seed();
 
-module.exports = { db, DATA_DIR, DB_FILE };
+module.exports = { db, DATA_DIR, DB_FILE, STORAGE };

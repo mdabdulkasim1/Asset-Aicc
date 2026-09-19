@@ -317,9 +317,50 @@
 
   /* ------------------------------------------------------------- dashboard */
 
+  function storageNotice(storage) {
+    if (!storage) return '';
+
+    if (!storage.persistent) {
+      return (
+        '<div class="alert error"><strong>Assets are not being saved permanently.</strong> ' +
+        'The register is writing to <code>' + esc(storage.data_dir) + '</code>, which is wiped ' +
+        'every time the app restarts. Mount a disk - a Volume on Railway - and either mount it ' +
+        'at that folder or point DATA_DIR at it.</div>'
+      );
+    }
+    if (!storage.writable) {
+      return (
+        '<div class="alert error"><strong>Nothing can be saved.</strong> The register cannot ' +
+        'write to <code>' + esc(storage.data_dir) + '</code>. Check the folder permissions.</div>'
+      );
+    }
+    return '';
+  }
+
+  function storageLine(storage) {
+    if (!storage) return '';
+    var mb = (storage.db_size_bytes / 1024 / 1024).toFixed(2);
+    return (
+      '<p style="color:#64748b;font-size:12.5px;margin:-8px 0 14px">Data kept in ' +
+      esc(storage.db_file) + ' (' + mb + ' MB)' +
+      (storage.volume_mount ? ', on the disk mounted at ' + esc(storage.volume_mount) : '') +
+      '.</p>'
+    );
+  }
+
   function viewDashboard() {
     loading();
-    window.api.get('/api/reports/summary').then(function (data) {
+    Promise.all([
+      window.api.get('/api/reports/summary'),
+      // Only the admin and the owner may ask where the data lives.
+      can('admin', 'owner')
+        ? window.api.get('/api/reports/storage').catch(function () {
+            return null;
+          })
+        : Promise.resolve(null),
+    ]).then(function (results) {
+      var data = results[0];
+      var storage = results[1] && results[1].storage;
       var t = data.totals;
       var companyCards = data.by_company
         .map(function (c) {
@@ -411,6 +452,8 @@
           'Live position of every asset across the group',
           '<a class="btn secondary" href="#/assets">Open register</a>'
         ) +
+        storageNotice(storage) +
+        storageLine(storage) +
         '<div class="grid cols-4" style="margin-bottom:16px">' +
         '<div class="stat brand"><div class="label">Total assets</div><div class="value">' +
         t.total_assets + '</div><div class="hint">' + t.total_quantity + ' item(s) counted</div></div>' +
