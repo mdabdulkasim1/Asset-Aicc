@@ -277,6 +277,33 @@ router.post('/preview-code', canEdit, (req, res) => {
   res.json({ code: previewCode(pair.company, pair.category), s_no: nextSerialNo() });
 });
 
+/**
+ * Finds an asset from whatever is to hand: the code on the sticker, the unique
+ * number the company gave it, or the maker's serial number. Serial numbers are
+ * not forced to be unique, so this can legitimately return more than one.
+ */
+router.get('/lookup', (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (!q) return res.status(400).json({ error: 'Scan a sticker, or type a code or serial number.' });
+
+  const matches = db
+    .prepare(
+      `${SELECT_ASSET}
+       WHERE a.asset_code = ? COLLATE NOCASE
+          OR (a.unique_no <> '' AND a.unique_no = ? COLLATE NOCASE)
+          OR (a.serial_number <> '' AND a.serial_number = ? COLLATE NOCASE)
+       ORDER BY a.s_no LIMIT 25`
+    )
+    .all(q, q, q);
+
+  if (!matches.length) {
+    return res.status(404).json({
+      error: `Nothing found for "${q}". Try the asset code, the unique number or the serial number.`,
+    });
+  }
+  res.json({ matches });
+});
+
 router.get('/by-code/:code', (req, res) => {
   const asset = db
     .prepare(`${SELECT_ASSET} WHERE a.asset_code = ?`)

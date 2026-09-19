@@ -1046,6 +1046,7 @@
       '<div class="field span-2">' +
       '<label class="checkline"><input type="checkbox" id="s-company"' + (settings.show_company ? ' checked' : '') + '> Show company code</label>' +
       '<label class="checkline"><input type="checkbox" id="s-category"' + (settings.show_category ? ' checked' : '') + '> Show category code</label>' +
+      '<label class="checkline"><input type="checkbox" id="s-serial"' + (settings.show_serial ? ' checked' : '') + '> Show serial / unique no</label>' +
       '<label class="checkline"><input type="checkbox" id="s-name"' + (settings.show_name ? ' checked' : '') + '> Show asset name</label>' +
       '<label class="checkline"><input type="checkbox" id="s-date"' + (settings.show_date ? ' checked' : '') + '> Show purchase date</label>' +
       '</div></div>' +
@@ -1072,6 +1073,7 @@
       company_code: 'AICC',
       category_code: 'LAP',
       name: 'Dell Latitude Laptop',
+      serial_number: '5CD1234XYZ',
       purchase_date: new Date().toISOString().slice(0, 10),
     };
 
@@ -1085,6 +1087,7 @@
         show_category: checked('s-category'),
         show_name: checked('s-name'),
         show_date: checked('s-date'),
+        show_serial: checked('s-serial'),
       };
     };
 
@@ -1155,41 +1158,85 @@
 
   /* -------------------------------------------------------------- scan/find */
 
+  function assetSummaryCard(a) {
+    return (
+      '<div class="card"><div class="card-head"><h3>' + esc(a.asset_code) + ' - ' + esc(a.name) + '</h3>' +
+      '<div class="actions"><a class="btn small secondary" href="#/assets/' + a.id + '">Open full record</a>' +
+      (canEdit() ? ' <button class="btn small scan-verify" data-id="' + a.id + '" data-code="' + esc(a.asset_code) + '">Mark verified</button>' : '') +
+      '</div></div><div class="detail-list">' +
+      '<div class="item"><div class="k">Belongs To</div><div class="v">' + esc(a.company_name) + '</div></div>' +
+      '<div class="item"><div class="k">Category</div><div class="v">' + esc(a.category_name) + '</div></div>' +
+      '<div class="item"><div class="k">Unique No</div><div class="v">' + esc(a.unique_no || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Serial No</div><div class="v">' + esc(a.serial_number || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Handover To</div><div class="v">' + esc(a.handover_to || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Currently Used By</div><div class="v">' + esc(a.current_user || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Department / Site</div><div class="v">' + esc(a.department || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Location</div><div class="v">' + esc(a.location || '-') + '</div></div>' +
+      '<div class="item"><div class="k">Status</div><div class="v">' + statusTag(a.status) + '</div></div>' +
+      '<div class="item"><div class="k">Purchase Date</div><div class="v">' + fmtDate(a.purchase_date) + '</div></div>' +
+      '</div></div>'
+    );
+  }
+
   function viewScan() {
     view.innerHTML =
-      pageHead('Scan / Find Asset', 'Scan the sticker with a barcode reader, or type the asset code.') +
+      pageHead(
+        'Scan / Find Asset',
+        'Scan the sticker with a barcode reader, or type the asset code, the serial number or the unique number.'
+      ) +
       '<div class="card"><div class="scan-box">' +
-      '<input id="scan-input" placeholder="AICC-LAP-0001" autofocus autocomplete="off">' +
+      '<input id="scan-input" placeholder="AICC-LAP-0001  or  5CD1234XYZ" autofocus autocomplete="off">' +
       '<button class="btn" id="scan-go" type="button">Find</button></div>' +
       '<p class="help" style="color:#64748b;margin-top:8px;font-size:12.5px">' +
-      'A USB barcode reader types the code and presses Enter by itself.</p></div>' +
+      'A USB barcode reader types the code and presses Enter by itself. Typing the serial ' +
+      'number printed under the barcode works just as well.</p></div>' +
       '<div id="scan-result"></div>';
 
-    var lookup = function () {
-      var code = value('scan-input');
-      if (!code) return;
+    var showMatches = function (matches, term) {
       var box = document.getElementById('scan-result');
+
+      if (matches.length === 1) {
+        box.innerHTML = assetSummaryCard(matches[0]);
+      } else {
+        // The same serial number can sit on more than one record.
+        box.innerHTML =
+          '<div class="alert info">' + matches.length + ' assets carry "' + esc(term) +
+          '". Pick the one you are holding.</div>' +
+          '<div class="card"><div class="table-wrap"><table><thead><tr>' +
+          '<th>Asset Code</th><th>Asset</th><th>Serial No</th><th>Belongs To</th>' +
+          '<th>Location</th><th></th></tr></thead><tbody>' +
+          matches
+            .map(function (a) {
+              return (
+                '<tr><td class="mono">' + esc(a.asset_code) + '</td><td>' + esc(a.name) + '</td>' +
+                '<td>' + esc(a.serial_number || a.unique_no || '-') + '</td>' +
+                '<td><span class="tag company">' + esc(a.company_code) + '</span></td>' +
+                '<td>' + esc(a.location || '-') + '</td>' +
+                '<td><a class="btn small ghost" href="#/assets/' + a.id + '">Open</a></td></tr>'
+              );
+            })
+            .join('') +
+          '</tbody></table></div></div>';
+      }
+
+      on('.scan-verify', 'click', function (e) {
+        var id = e.currentTarget.getAttribute('data-id');
+        var code = e.currentTarget.getAttribute('data-code');
+        window.api.post('/api/assets/' + id + '/verify').then(function () {
+          toast('Verified ' + code);
+        }, fail);
+      });
+    };
+
+    var lookup = function () {
+      var term = value('scan-input');
+      if (!term) return;
+      var box = document.getElementById('scan-result');
+
       window.api
-        .get('/api/assets/by-code/' + encodeURIComponent(code))
+        .get('/api/assets/lookup' + window.api.query({ q: term }))
         .then(function (data) {
-          var a = data.asset;
-          box.innerHTML =
-            '<div class="card"><div class="card-head"><h3>' + esc(a.asset_code) + ' - ' + esc(a.name) + '</h3>' +
-            '<div class="actions"><a class="btn small secondary" href="#/assets/' + a.id + '">Open full record</a>' +
-            (canEdit() ? ' <button class="btn small" id="scan-verify">Mark verified</button>' : '') +
-            '</div></div><div class="detail-list">' +
-            '<div class="item"><div class="k">Belongs To</div><div class="v">' + esc(a.company_name) + '</div></div>' +
-            '<div class="item"><div class="k">Category</div><div class="v">' + esc(a.category_name) + '</div></div>' +
-            '<div class="item"><div class="k">Currently Used By</div><div class="v">' + esc(a.current_user || '-') + '</div></div>' +
-            '<div class="item"><div class="k">Location</div><div class="v">' + esc(a.location || '-') + '</div></div>' +
-            '<div class="item"><div class="k">Status</div><div class="v">' + statusTag(a.status) + '</div></div>' +
-            '<div class="item"><div class="k">Purchase Date</div><div class="v">' + fmtDate(a.purchase_date) + '</div></div>' +
-            '</div></div>';
-          on('#scan-verify', 'click', function () {
-            window.api.post('/api/assets/' + a.id + '/verify').then(function () {
-              toast('Verified ' + a.asset_code);
-            }, fail);
-          });
+          showMatches(data.matches, term);
           var input = document.getElementById('scan-input');
           input.value = '';
           input.focus();

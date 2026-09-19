@@ -11,6 +11,7 @@
     show_category: true,
     show_name: true,
     show_date: true,
+    show_serial: true,
     barcode_height: 8.5,
     copies: 1,
   };
@@ -72,6 +73,13 @@
         '</div>';
     }
 
+    // The maker's serial when there is one, otherwise the company's own number.
+    var serial = asset.serial_number || asset.unique_no || '';
+    var serialLine =
+      settings.show_serial && serial
+        ? '<div class="l-serial">SN ' + escapeHtml(serial) + '</div>'
+        : '';
+
     var foot = '';
     if (settings.show_name || settings.show_date) {
       foot =
@@ -96,6 +104,7 @@
       '<div class="l-code">' +
       escapeHtml(asset.asset_code) +
       '</div>' +
+      serialLine +
       foot +
       '</div>'
     );

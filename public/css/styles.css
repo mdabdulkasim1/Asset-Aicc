@@ -511,6 +511,17 @@ td.mono {
 .asset-label .barcode-svg { display: block; }
 .asset-label .l-code { font-size: 3.1mm; font-weight: 700; letter-spacing: .04em; font-family: "Consolas", monospace; }
 
+.asset-label .l-serial {
+  max-width: 100%;
+  font-size: 2.2mm;
+  font-weight: 600;
+  letter-spacing: .01em;
+  font-family: "Consolas", monospace;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .asset-label .l-foot {
   width: 100%;
   display: flex;

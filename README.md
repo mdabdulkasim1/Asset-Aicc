@@ -18,8 +18,10 @@ and sees, at a glance, how many assets the group holds and where they are.
 - **99 ready-made categories** covering office/IT, office furniture and fixtures, school
   items, construction plant and tools, vehicles and electrical. Add your own at any time.
 - **Barcode sticker** (Code 128) sized exactly 50 x 25 mm, printed one per page for a
-  label roll printer. Print one, print a batch, or print every sticker not yet printed.
-- **Scan / Find** page: scan a sticker with any USB barcode reader and the asset opens,
+  label roll printer, carrying the asset code and the serial number. Print one, print a
+  batch, or print every sticker not yet printed.
+- **Scan / Find** page: scan a sticker with any USB barcode reader - or just type the
+  **serial number**, the unique number or the asset code - and the asset's details open,
   with a "Mark verified" button for physical stock checks.
 - **Dashboard and reports**: totals per company, per category group, per status, purchase
   value, warranty expiring in 60 days, recent entries, and an activity log of who did what.
@@ -91,9 +93,14 @@ otherwise the barcode width changes and scanners may struggle.
 
 ### Checking assets on site
 
-Open **Scan / Find**, scan the sticker with a USB barcode reader (it types the code and
-presses Enter by itself), and the record appears. Press **Mark verified** to stamp the
-date of the physical check.
+Open **Scan / Find** and either scan the sticker with a USB barcode reader (it types the
+code and presses Enter by itself) or type what you can read on the asset - the **serial
+number**, the unique number you gave it, or the asset code. The record appears with who
+holds it, where it is and its status. Press **Mark verified** to stamp the date of the
+physical check.
+
+Serial numbers are not forced to be unique, so if the same one sits on several assets they
+are all listed and you pick the one in your hand.
 
 ---
 
