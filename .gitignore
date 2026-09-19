@@ -8,3 +8,4 @@ data/.jwt-secret
 *.log
 .DS_Store
 backups/
+data/*.pem

@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Asset Register</title>
+<meta name="description" content="Group asset control and barcode labelling">
+<meta name="theme-color" content="#0f4c81">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Assets">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f4c81'/><g fill='%23fff'><rect x='7' y='9' width='2' height='14'/><rect x='11' y='9' width='1' height='14'/><rect x='14' y='9' width='3' height='14'/><rect x='19' y='9' width='1' height='14'/><rect x='22' y='9' width='2' height='14'/></g></svg>">
 <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -40,6 +49,8 @@
       <span class="fullname" id="who-name"></span>
       <span class="tag role" id="who-role"></span>
     </div>
+    <button class="btn small ghost" id="install-btn" type="button" hidden
+            style="color:#fff;border-color:rgba(255,255,255,.4)">Install app</button>
     <button class="btn small ghost" id="logout-btn" type="button" style="color:#fff;border-color:rgba(255,255,255,.4)">Sign out</button>
   </header>
 

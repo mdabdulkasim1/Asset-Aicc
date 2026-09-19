@@ -538,6 +538,41 @@
         : '<tr><td colspan="12"><div class="empty"><div class="big">No assets match</div>' +
           'Change the filters, or add the first asset.</div></td></tr>';
 
+      // On a phone the same rows are shown as cards - a table that scrolls
+      // sideways is no use to a controller standing in front of the asset.
+      var cards = data.assets.length
+        ? data.assets
+            .map(function (a) {
+              return (
+                '<div class="a-card">' +
+                '<div class="a-card-top">' +
+                (canEdit()
+                  ? '<input type="checkbox" class="row-check" data-id="' + a.id + '"' +
+                    (state.selection[a.id] ? ' checked' : '') + ' aria-label="Select for label printing">'
+                  : '') +
+                '<a class="a-card-code mono" href="#/assets/' + a.id + '">' + esc(a.asset_code) + '</a>' +
+                '<span class="tag company">' + esc(a.company_code) + '</span>' +
+                '<span class="a-card-status">' + statusTag(a.status) + '</span>' +
+                '</div>' +
+                '<div class="a-card-name">' + esc(a.name) + '</div>' +
+                '<div class="a-card-meta">' + esc(a.category_name) +
+                (a.current_user || a.handover_to ? ' &middot; ' + esc(a.current_user || a.handover_to) : '') +
+                (a.location ? ' &middot; ' + esc(a.location) : '') + '</div>' +
+                '<div class="a-card-foot"><span>S.NO ' + a.s_no + ' &middot; ' +
+                fmtDate(a.purchase_date) +
+                (a.purchase_cost != null ? ' &middot; ' + money(a.purchase_cost) : '') + '</span>' +
+                '<span class="row-actions">' +
+                '<a class="btn small ghost" href="#/assets/' + a.id + '">Open</a>' +
+                (canEdit()
+                  ? '<button class="btn small secondary print-one" data-id="' + a.id + '">Label</button>'
+                  : '') +
+                '</span></div></div>'
+              );
+            })
+            .join('')
+        : '<div class="empty"><div class="big">No assets match</div>' +
+          'Change the filters, or add the first asset.</div>';
+
       var selectedCount = Object.keys(state.selection).filter(function (k) {
         return state.selection[k];
       }).length;
@@ -554,7 +589,8 @@
               : '')
         ) +
         assetFilters() +
-        '<div class="card"><div class="table-wrap"><table><thead><tr>' +
+        '<div class="card"><div class="asset-cards">' + cards + '</div>' +
+        '<div class="table-wrap assets-table"><table><thead><tr>' +
         (canEdit() ? '<th><input type="checkbox" id="check-all"></th>' : '') +
         sortHeader('s_no', 'S.NO', 'num') +
         sortHeader('asset_code', 'Asset Code') +
@@ -612,7 +648,11 @@
       });
 
       on('.row-check', 'change', function (e) {
-        state.selection[e.target.getAttribute('data-id')] = e.target.checked;
+        var id = e.target.getAttribute('data-id');
+        state.selection[id] = e.target.checked;
+        view.querySelectorAll('.row-check[data-id="' + id + '"]').forEach(function (box) {
+          box.checked = e.target.checked;
+        });
         refreshSelectedCount();
       });
 
@@ -1634,6 +1674,42 @@
   window.addEventListener('hashchange', route);
   window.addEventListener('auth:expired', function () {
     showLogin('Your session ended. Please sign in again.');
+  });
+
+  /* ------------------------------------------------- install as an app */
+
+  // The service worker lets the screens open when the network drops. It only
+  // works on https or on localhost, which is how browsers guard it.
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {
+        /* not fatal - the app simply will not work offline */
+      });
+    });
+  }
+
+  var installPrompt = null;
+  var installButton = document.getElementById('install-btn');
+
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    installPrompt = event;
+    installButton.hidden = false;
+  });
+
+  installButton.addEventListener('click', function () {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then(function () {
+      installPrompt = null;
+      installButton.hidden = true;
+    });
+  });
+
+  window.addEventListener('appinstalled', function () {
+    installPrompt = null;
+    installButton.hidden = true;
+    toast('Installed. Open it from your home screen or start menu.');
   });
 
   if (window.api.getToken()) {

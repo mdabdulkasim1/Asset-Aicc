@@ -24,7 +24,9 @@ and sees, at a glance, how many assets the group holds and where they are.
 - **Dashboard and reports**: totals per company, per category group, per status, purchase
   value, warranty expiring in 60 days, recent entries, and an activity log of who did what.
 - **CSV export** of any filtered view, ready for Excel.
-- Works on a PC, tablet or phone browser.
+- **Installs as an app** on Android, iPhone, Windows and Mac - own icon, own window, and
+  the screens still open when the network drops (section 9). On a phone the register shows
+  as cards instead of a wide table.
 
 ---
 
@@ -250,7 +252,68 @@ with `certbot --nginx`, and the register stays on `127.0.0.1:3000` behind it.
 
 ---
 
-## 9. How it is built
+## 9. Using it as an app on phones and desktops
+
+The register installs like an app - its own icon, its own window, no browser bar - on
+Android, iPhone, Windows and Mac. There is nothing to publish to an app store and nothing
+for the controllers to download: the app comes from your own office computer.
+
+### Step 1 - turn on https
+
+Browsers only offer to install a site, and only let it keep working with the network down,
+when the address is secure. On the computer running the register:
+
+```bash
+npm run make-cert     # once, and again about once a year to renew
+npm start             # it now says https://... instead of http://...
+```
+
+### Step 2 - let each device trust the certificate
+
+The certificate signs itself, so every phone and PC shows a warning the first time.
+**Clicking past that warning is not enough to install the app** - the device has to trust
+the certificate properly. On each device, once:
+
+1. Open `https://<the office computer>:3000/cert.pem` - the register hands the certificate
+   over (only the public half; the secret key never leaves the computer).
+2. **Android** - it offers to install it; give it any name.
+   **iPhone / iPad** - it downloads a profile: *Settings → Profile Downloaded → Install*,
+   then *Settings → General → About → Certificate Trust Settings* and switch it on.
+   **Windows** - open the downloaded file → *Install Certificate* → *Local Machine* →
+   *Trusted Root Certification Authorities*. **Mac** - open it in Keychain Access and set it
+   to *Always Trust*.
+
+Skipping this step is fine if you only want the register in a browser - it works normally,
+it just cannot be installed as an app or used with the network down. With a real domain and
+a real certificate (section 8) none of this is needed at all.
+
+### Step 3 - install it
+
+| Device | How |
+| --- | --- |
+| **Android (Chrome)** | Open the address, then the **Install app** button in the top bar, or menu → *Install app* |
+| **iPhone / iPad (Safari)** | Open the address, tap **Share**, then *Add to Home Screen* |
+| **Windows / Mac (Chrome or Edge)** | Open the address, then the **Install app** button in the top bar, or the install icon at the right of the address bar |
+
+Once installed it opens straight into the register from the home screen or start menu, and
+the icon carries shortcuts to *Add Asset*, *Scan / Find* and *Print Labels*.
+
+### What works away from the network
+
+The screens themselves are kept on the device, so the app still opens when the Wi-Fi drops
+or the office computer is off - it says plainly that it cannot reach the register rather
+than showing a broken page. Asset data is always read live from the server, never from an
+old copy on the phone, because a stale register would be worse than an honest error.
+
+### On a phone
+
+The asset list turns into cards instead of a wide table, so a controller standing in front
+of a machine can read the code, who holds it and its status without scrolling sideways, and
+can tick items for label printing with a thumb.
+
+---
+
+## 10. How it is built
 
 | Part | Detail |
 | --- | --- |
@@ -258,6 +321,7 @@ with `certbot --nginx`, and the register stays on `127.0.0.1:3000` behind it.
 | Database | SQLite (`better-sqlite3`), single file, no separate server |
 | Sign-in | JWT tokens, passwords hashed with bcrypt |
 | Front end | Plain HTML, CSS and JavaScript - no build step, nothing to compile |
+| App install | Web app manifest + service worker, so it installs on phones and desktops |
 | Barcode | Code 128 drawn as SVG by `public/js/barcode.js` - no internet needed to print |
 
 ```
@@ -267,7 +331,11 @@ src/auth.js               tokens, password hashing, role guards
 src/codes.js              asset code and S.NO generation
 src/routes/               auth, users, companies/categories, assets, reports
 public/                   the screens (index.html, css, js)
-scripts/seed-demo.js     sample data
+public/sw.js              keeps the screens working with the network down
+public/manifest.webmanifest  what the installed app is called and looks like
+scripts/seed-demo.js      sample data
 scripts/reset-password.js forgotten-password reset
+scripts/make-cert.js      certificate for https on the office network
+scripts/backup.js         safe copy of the database
 data/assets.db            your data
 ```

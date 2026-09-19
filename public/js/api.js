@@ -31,7 +31,17 @@
       method: method,
       headers: headers,
       body: body === undefined ? undefined : JSON.stringify(body),
-    }).then(function (response) {
+    })
+      .catch(function () {
+        // The browser could not reach the server at all - flat Wi-Fi, the office
+        // PC switched off, a cable out. Say so in words that help.
+        var offline = new Error(
+          'No connection to the register. Check the Wi-Fi, or whether the office computer is on.'
+        );
+        offline.offline = true;
+        throw offline;
+      })
+      .then(function (response) {
       if (response.status === 204) return {};
       return response
         .json()
