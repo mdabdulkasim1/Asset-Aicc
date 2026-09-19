@@ -348,6 +348,20 @@
     );
   }
 
+  function backupCard(storage) {
+    if (!can('admin')) return '';
+    var mb = storage ? (storage.db_size_bytes / 1024 / 1024).toFixed(2) + ' MB' : 'one file';
+    return (
+      '<div class="card"><div class="card-head"><h3>Backup</h3>' +
+      '<div class="actions"><button class="btn" id="download-backup" type="button">' +
+      'Download backup</button></div></div>' +
+      '<p style="margin:0;color:#64748b;font-size:13px">The whole register - every asset, ' +
+      'category and login - is ' + esc(mb) + ' in one file. Download a copy now and then and ' +
+      'keep it somewhere of your own: a pen drive, or a folder that syncs. The copy is taken ' +
+      'safely while people are using the register.</p></div>'
+    );
+  }
+
   function viewDashboard() {
     loading();
     Promise.all([
@@ -481,7 +495,23 @@
         '<div class="card"><h3>Recently added</h3><div class="table-wrap"><table><thead><tr>' +
         '<th>S.NO</th><th>Asset Code</th><th>Asset</th><th>Belongs To</th><th>Category</th>' +
         '<th>Entered By</th><th>Entered On</th></tr></thead><tbody>' + recentRows +
-        '</tbody></table></div></div>';
+        '</tbody></table></div></div>' +
+        backupCard(storage);
+
+      on('#download-backup', 'click', function (e) {
+        var button = e.currentTarget;
+        button.disabled = true;
+        button.textContent = 'Preparing...';
+        downloadFile('/api/reports/backup', 'asset-register-backup.db')
+          .then(function () {
+            toast('Backup downloaded. Keep it somewhere safe.');
+          })
+          .catch(fail)
+          .then(function () {
+            button.disabled = false;
+            button.textContent = 'Download backup';
+          });
+      });
     }, fail);
   }
 
@@ -731,25 +761,46 @@
     button.textContent = 'Print labels (' + count + ')';
   }
 
-  /** CSV needs the auth header, so fetch it and hand the browser a blob. */
-  function downloadCsv(url) {
-    fetch(url, { headers: { Authorization: 'Bearer ' + window.api.getToken() } })
+  /**
+   * Downloads need the sign-in token, which a plain link cannot carry, so the
+   * file is fetched and handed to the browser as a blob.
+   */
+  function downloadFile(url, fallbackName) {
+    return fetch(url, { headers: { Authorization: 'Bearer ' + window.api.getToken() } })
       .then(function (response) {
-        if (!response.ok) throw new Error('Export failed.');
-        return response.blob();
+        if (!response.ok) {
+          return response
+            .json()
+            .catch(function () {
+              return {};
+            })
+            .then(function (body) {
+              throw new Error(body.error || 'The download failed.');
+            });
+        }
+        // Use the name the server chose when it sent one.
+        var disposition = response.headers.get('Content-Disposition') || '';
+        var match = disposition.match(/filename="([^"]+)"/);
+        var name = match ? match[1] : fallbackName;
+        return response.blob().then(function (blob) {
+          return { blob: blob, name: name };
+        });
       })
-      .then(function (blob) {
+      .then(function (file) {
         var link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'assets-' + new Date().toISOString().slice(0, 10) + '.csv';
+        link.href = URL.createObjectURL(file.blob);
+        link.download = file.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         setTimeout(function () {
           URL.revokeObjectURL(link.href);
         }, 4000);
-      })
-      .catch(fail);
+      });
+  }
+
+  function downloadCsv(url) {
+    downloadFile(url, 'assets-' + new Date().toISOString().slice(0, 10) + '.csv').catch(fail);
   }
 
   function printByIds(ids) {

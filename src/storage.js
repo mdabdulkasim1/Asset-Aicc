@@ -74,13 +74,17 @@ function describeStorage(dataDir, dbFile) {
     writable = false;
   }
 
+  // SQLite keeps recent writes in a -wal file beside the database until it is
+  // checkpointed, so the main file alone understates how much is stored.
   let exists = false;
   let sizeBytes = 0;
-  try {
-    sizeBytes = fs.statSync(dbFile).size;
-    exists = true;
-  } catch {
-    /* not created yet */
+  for (const suffix of ['', '-wal']) {
+    try {
+      sizeBytes += fs.statSync(`${dbFile}${suffix}`).size;
+      if (suffix === '') exists = true;
+    } catch {
+      /* not created yet */
+    }
   }
 
   // On a normal computer the data folder is simply part of the disk. In a

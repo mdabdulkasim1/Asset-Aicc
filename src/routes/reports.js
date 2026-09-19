@@ -1,9 +1,12 @@
 'use strict';
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const express = require('express');
 const { db, DATA_DIR, DB_FILE } = require('../db');
 const { describeStorage } = require('../storage');
-const { requireRole } = require('../auth');
+const { logActivity, requireRole } = require('../auth');
 
 const router = express.Router();
 
@@ -124,6 +127,44 @@ router.get('/summary', (_req, res) => {
 /** Where the data sits and whether it survives a restart. Read fresh each time. */
 router.get('/storage', requireRole('admin', 'owner'), (_req, res) => {
   res.json({ storage: describeStorage(DATA_DIR, DB_FILE) });
+});
+
+/**
+ * Hands the admin the whole register as one file to keep somewhere safe.
+ * Taken through SQLite's own backup, so it is a complete database even if
+ * someone is entering an asset at that moment - never a half-written copy.
+ * Admin only: the file holds every password hash in the system.
+ */
+router.get('/backup', requireRole('admin'), async (req, res) => {
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '');
+  const temporary = path.join(os.tmpdir(), `asset-register-backup-${process.pid}-${Date.now()}.db`);
+
+  const discard = () => fs.unlink(temporary, () => {});
+
+  try {
+    await db.backup(temporary);
+  } catch (error) {
+    discard();
+    return res.status(500).json({ error: `Could not prepare the backup: ${error.message}` });
+  }
+
+  logActivity(req.user.id, 'download-backup', 'database', null, `asset-register-${stamp}.db`);
+
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="asset-register-${stamp}.db"`);
+  try {
+    res.setHeader('Content-Length', fs.statSync(temporary).size);
+  } catch {
+    /* the length is a courtesy, not a requirement */
+  }
+
+  const file = fs.createReadStream(temporary);
+  file.on('error', () => {
+    discard();
+    res.destroy();
+  });
+  res.on('close', discard);
+  file.pipe(res);
 });
 
 router.get('/activity', requireRole('admin', 'owner'), (req, res) => {

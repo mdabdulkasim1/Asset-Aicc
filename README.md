@@ -26,7 +26,8 @@ and sees, at a glance, how many assets the group holds and where they are.
   with a "Mark verified" button for physical stock checks.
 - **Dashboard and reports**: totals per company, per category group, per status, purchase
   value, warranty expiring in 60 days, recent entries, and an activity log of who did what.
-- **CSV export** of any filtered view, ready for Excel.
+- **CSV export** of any filtered view, ready for Excel, and a one-press **backup download**
+  that hands the admin the whole register as a single file.
 - **Installs as an app** on Android, iPhone, Windows and Mac - own icon, own window, and
   the screens still open when the network drops (section 9). On a phone the register shows
   as cards instead of a wide table.
@@ -155,8 +156,13 @@ your shell history.
 
 Everything lives in one file: **`data/assets.db`**.
 
-Take a backup with one command - it works even while people are using the register, and
-always produces a complete, openable copy:
+**From inside the app:** sign in as the admin and press **Download backup** on the
+dashboard. It hands you the whole register as one file - useful when it runs on a hosting
+platform, where there is no command line to hand. Keep the file on a pen drive or a folder
+that syncs.
+
+**From the command line**, on the computer that holds the data - it works even while people
+are using the register, and always produces a complete, openable copy:
 
 ```bash
 npm run backup                          # into ./backups
