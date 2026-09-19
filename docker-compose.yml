@@ -1,0 +1,16 @@
+services:
+  asset-register:
+    build: .
+    image: asset-register
+    container_name: asset-register
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # The register's database. Back this folder up.
+      - ./data:/data
+    environment:
+      # Set these once, on the very first start, to choose the admin login.
+      # ADMIN_USERNAME: kasim
+      # ADMIN_PASSWORD: change-me-on-first-run
+      TZ: Asia/Kolkata

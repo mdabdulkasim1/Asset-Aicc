@@ -178,7 +178,51 @@ Caddy in front of it) so passwords are not sent in the clear.
 
 ---
 
-## 8. How it is built
+## 8. Putting it on a server for good
+
+Three ways, pick the one that suits you. In every case the database is the `data` folder -
+back it up.
+
+### a) Docker (simplest on a Linux server or NAS)
+
+```bash
+docker compose up -d --build     # first time
+docker compose logs -f           # watch it start, see the first admin password
+docker compose pull && docker compose up -d --build   # after an update
+```
+
+It listens on port 3000 and keeps the database in `./data`. To choose the admin login
+yourself, uncomment `ADMIN_USERNAME` / `ADMIN_PASSWORD` in `docker-compose.yml` **before**
+the very first start (they are read only when the database is created).
+
+### b) Straight on a Linux machine, started again after a reboot
+
+```bash
+sudo useradd -r -m -d /opt/asset-register assetreg
+sudo cp -r . /opt/asset-register && cd /opt/asset-register
+sudo -u assetreg npm ci --omit=dev
+sudo cp deploy/asset-register.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now asset-register
+sudo journalctl -u asset-register -n 30      # the first admin password is in here
+```
+
+### c) On an office Windows PC
+
+Install Node.js, copy the folder in, then in that folder run `npm ci --omit=dev` once and
+`npm start` to use it. To have it come back after a restart, either add a shortcut to
+`shell:startup`, or install it as a service with a tool such as
+[NSSM](https://nssm.cc) pointing at `node server.js`.
+
+### Reaching it from outside the office
+
+Only expose it with HTTPS in front, otherwise passwords travel in the clear. A ready nginx
+site file is in `deploy/nginx-asset-register.conf` - change the domain, get a certificate
+with `certbot --nginx`, and the register stays on `127.0.0.1:3000` behind it.
+
+---
+
+## 9. How it is built
 
 | Part | Detail |
 | --- | --- |

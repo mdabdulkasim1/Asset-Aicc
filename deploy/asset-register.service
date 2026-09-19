@@ -1,0 +1,33 @@
+# Runs the asset register on a Linux server, started again after a reboot.
+#
+#   sudo cp deploy/asset-register.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now asset-register
+#   sudo systemctl status asset-register
+#
+# Adjust User and WorkingDirectory to match where the folder actually sits.
+
+[Unit]
+Description=Asset Register
+After=network.target
+
+[Service]
+Type=simple
+User=assetreg
+WorkingDirectory=/opt/asset-register
+ExecStart=/usr/bin/node server.js
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=0.0.0.0
+Restart=always
+RestartSec=5
+
+# Only the data folder needs to be writable.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadWritePaths=/opt/asset-register/data
+
+[Install]
+WantedBy=multi-user.target
