@@ -1046,7 +1046,7 @@
       '<div class="field span-2">' +
       '<label class="checkline"><input type="checkbox" id="s-company"' + (settings.show_company ? ' checked' : '') + '> Show company code</label>' +
       '<label class="checkline"><input type="checkbox" id="s-category"' + (settings.show_category ? ' checked' : '') + '> Show category code</label>' +
-      '<label class="checkline"><input type="checkbox" id="s-serial"' + (settings.show_serial ? ' checked' : '') + '> Show serial / unique no</label>' +
+      '<label class="checkline"><input type="checkbox" id="s-serial"' + (settings.show_serial ? ' checked' : '') + '> Serial no on the big line, asset code under it</label>' +
       '<label class="checkline"><input type="checkbox" id="s-name"' + (settings.show_name ? ' checked' : '') + '> Show asset name</label>' +
       '<label class="checkline"><input type="checkbox" id="s-date"' + (settings.show_date ? ' checked' : '') + '> Show purchase date</label>' +
       '</div></div>' +

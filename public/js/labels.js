@@ -73,12 +73,15 @@
         '</div>';
     }
 
-    // The maker's serial when there is one, otherwise the company's own number.
+    // The serial number is the line people read off the asset, so it takes the
+    // big line under the barcode. The maker's serial when there is one, else the
+    // company's own unique number. The asset code - what the barcode encodes -
+    // sits under it in smaller type. With no serial recorded, the code takes the
+    // big line on its own.
     var serial = asset.serial_number || asset.unique_no || '';
-    var serialLine =
-      settings.show_serial && serial
-        ? '<div class="l-serial">SN ' + escapeHtml(serial) + '</div>'
-        : '';
+    var leadWithSerial = settings.show_serial && !!serial;
+    var mainLine = leadWithSerial ? serial : asset.asset_code;
+    var subLine = leadWithSerial ? asset.asset_code : '';
 
     var foot = '';
     if (settings.show_name || settings.show_date) {
@@ -101,10 +104,10 @@
       'mm">' +
       top +
       svg +
-      '<div class="l-code">' +
-      escapeHtml(asset.asset_code) +
+      '<div class="l-main">' +
+      escapeHtml(mainLine) +
       '</div>' +
-      serialLine +
+      (subLine ? '<div class="l-sub">' + escapeHtml(subLine) + '</div>' : '') +
       foot +
       '</div>'
     );

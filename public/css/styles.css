@@ -509,9 +509,21 @@ td.mono {
 .asset-label .l-top .l-owner { text-transform: uppercase; }
 .asset-label .l-top .l-cat { font-weight: 600; font-size: 2.2mm; }
 .asset-label .barcode-svg { display: block; }
-.asset-label .l-code { font-size: 3.1mm; font-weight: 700; letter-spacing: .04em; font-family: "Consolas", monospace; }
+/* the big line under the barcode - the serial number, or the asset code when
+   no serial is recorded */
+.asset-label .l-main {
+  max-width: 100%;
+  font-size: 3.1mm;
+  font-weight: 700;
+  letter-spacing: .04em;
+  font-family: "Consolas", monospace;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
-.asset-label .l-serial {
+/* the asset code beneath it, which is what the barcode itself carries */
+.asset-label .l-sub {
   max-width: 100%;
   font-size: 2.2mm;
   font-weight: 600;

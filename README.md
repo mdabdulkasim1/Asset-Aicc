@@ -18,8 +18,9 @@ and sees, at a glance, how many assets the group holds and where they are.
 - **99 ready-made categories** covering office/IT, office furniture and fixtures, school
   items, construction plant and tools, vehicles and electrical. Add your own at any time.
 - **Barcode sticker** (Code 128) sized exactly 50 x 25 mm, printed one per page for a
-  label roll printer, carrying the asset code and the serial number. Print one, print a
-  batch, or print every sticker not yet printed.
+  label roll printer. Under the barcode it shows the **serial number**, with the asset code
+  beneath it; an asset with no serial recorded shows its asset code instead. Print one,
+  print a batch, or print every sticker not yet printed.
 - **Scan / Find** page: scan a sticker with any USB barcode reader - or just type the
   **serial number**, the unique number or the asset code - and the asset's details open,
   with a "Mark verified" button for physical stock checks.
