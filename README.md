@@ -213,6 +213,11 @@ back it up.
 
 ### a) Docker (simplest on a Linux server or NAS)
 
+A mounted disk arrives owned by root, while the register runs as an ordinary user, so the
+image starts through `docker-entrypoint.sh`: it hands the data folder to that user and then
+drops root before starting the app. Nothing to configure - it just means the container can
+write to whatever disk you mount.
+
 ```bash
 docker compose up -d --build     # first time
 docker compose logs -f           # watch it start, see the first admin password

@@ -12,6 +12,11 @@ RUN npm ci --omit=dev
 
 FROM node:22-bookworm-slim
 
+# gosu drops root cleanly once the mounted disk has been made writable.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends gosu \
+ && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
@@ -24,13 +29,18 @@ COPY server.js ./
 COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # The database lives here. Mount a persistent disk at /data - on Railway, a
-# Volume in the service settings - otherwise every deploy starts with an empty
+# Volume attached to the service - otherwise every deploy starts with an empty
 # register. No VOLUME instruction: hosting platforms manage that themselves.
-RUN mkdir -p /data && chown -R node:node /data /app
+RUN mkdir -p /data \
+ && chown -R node:node /data /app \
+ && chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER node
 EXPOSE 3000
 
+# Starts as root only long enough to make the mounted disk writable, then runs
+# the register as the unprivileged node user.
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]

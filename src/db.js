@@ -16,7 +16,23 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const STORAGE = describeStorage(DATA_DIR, DB_FILE);
 
-const db = new Database(DB_FILE);
+let db;
+try {
+  db = new Database(DB_FILE);
+} catch (error) {
+  // Nearly always a mounted disk that belongs to another user, which is worth
+  // saying in words rather than leaving a bare SQLite error in the log.
+  console.error('');
+  console.error('  Could not open the register.');
+  console.error(`    file : ${DB_FILE}`);
+  console.error(`    why  : ${error.message}`);
+  console.error('');
+  console.error('  If this is a mounted disk, the app cannot write to it. The container must');
+  console.error('  hand the folder to the user it runs as before starting - see');
+  console.error('  docker-entrypoint.sh - or point DATA_DIR at a folder it owns.');
+  console.error('');
+  process.exit(1);
+}
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
