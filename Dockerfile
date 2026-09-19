@@ -27,8 +27,8 @@ COPY public ./public
 COPY scripts ./scripts
 
 # The database lives on a volume so it survives image rebuilds.
+# Attach a Railway Volume mounted at /data in the service settings to persist this directory.
 RUN mkdir -p /data && chown -R node:node /data /app
-VOLUME ["/data"]
 
 USER node
 EXPOSE 3000
