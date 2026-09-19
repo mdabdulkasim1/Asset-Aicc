@@ -1371,9 +1371,6 @@
       '<div id="rp-error" class="alert error hidden"></div>' +
         passwordField('rp-new', 'New password', { required: true, help: 'At least 6 characters.' }) +
         passwordField('rp-confirm', 'Repeat password', { required: true }) +
-        '<label class="checkline" style="margin-bottom:14px">' +
-        '<input type="checkbox" id="rp-force" checked> Ask them to choose their own at next sign-in' +
-        '</label>' +
         '<div class="toolbar">' +
         '<button class="btn ghost" type="button" id="rp-generate">Generate</button>' +
         '<span style="flex:1"></span>' +
@@ -1413,10 +1410,7 @@
       if (password.length < 6) return showError('Password must be at least 6 characters long.');
 
       window.api
-        .post('/api/users/' + id + '/password', {
-          password: password,
-          must_change_password: modal.querySelector('#rp-force').checked,
-        })
+        .post('/api/users/' + id + '/password', { password: password })
         .then(function () {
           // Show it once more, so the admin can pass it on before closing.
           modal.querySelector('.modal-body').innerHTML =
@@ -1458,7 +1452,7 @@
         .map(function (u) {
           return (
             '<tr><td><strong>' + esc(u.username) + '</strong>' +
-            (u.must_change_password ? ' <span class="tag warn">must change password</span>' : '') +
+            (u.must_change_password ? ' <span class="tag warn">still on a given password</span>' : '') +
             '</td><td>' + esc(u.full_name || '-') + '</td>' +
             '<td><span class="tag role">' + esc(u.role) + '</span></td>' +
             '<td class="num">' + u.assets_created + '</td>' +
@@ -1563,14 +1557,10 @@
 
   /* --------------------------------------------------------------- account */
 
-  function viewAccount(forced) {
+  function viewAccount() {
     view.innerHTML =
-      pageHead(
-        'My Password',
-        forced ? 'Please choose your own password before you carry on.' : 'Change the password for ' + state.user.username
-      ) +
+      pageHead('My Password', 'Change the password for ' + state.user.username) +
       '<div class="card" style="max-width:460px">' +
-      (forced ? '<div class="alert info">You are using the password given to you. Set a new one now.</div>' : '') +
       '<div id="pw-error" class="alert error hidden"></div>' +
       passwordField('pw-current', 'Current password', {
         autocomplete: 'current-password',
@@ -1615,12 +1605,6 @@
     var parts = (location.hash || '#/dashboard').replace(/^#\/?/, '').split('?')[0].split('/');
     var head = parts[0] || 'dashboard';
 
-    // A freshly created login must set its own password first.
-    if (state.user.must_change_password && head !== 'account') {
-      location.hash = '#/account';
-      return;
-    }
-
     renderNav(parts.slice(0, 2).join('/') === 'assets/new' ? 'assets/new' : head);
     document.getElementById('sidebar').classList.remove('open');
     window.scrollTo(0, 0);
@@ -1645,7 +1629,7 @@
     if (head === 'companies') return viewMaster('companies');
     if (head === 'users') return viewUsers();
     if (head === 'activity') return viewActivity();
-    if (head === 'account') return viewAccount(!!state.user.must_change_password);
+    if (head === 'account') return viewAccount();
     return viewDashboard();
   }
 

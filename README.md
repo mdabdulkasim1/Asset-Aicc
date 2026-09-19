@@ -107,8 +107,9 @@ are all listed and you pick the one in your hand.
 
 ## 4. Users and roles
 
-Create logins under **Users** (admin only). Every new user must change their password at
-first sign-in.
+Create logins under **Users** (admin only). A login you create, or whose password you
+reset, is tagged *still on a given password* in the list until that person changes it
+themselves under **My Password** - nobody is stopped from working in the meantime.
 
 | Role | Can do |
 | --- | --- |
@@ -127,8 +128,7 @@ Run this on the computer that holds the database:
 npm run reset-password -- admin
 ```
 
-It sets a fresh password, prints it on screen, and asks that user to choose their own at
-their next sign-in. Other forms:
+It sets a fresh password and prints it on screen. Other forms:
 
 ```bash
 npm run reset-password -- --list                 # show the logins
@@ -267,6 +267,7 @@ no extra setup. Two settings matter, and the first one is not optional:
    | --- | --- |
    | `ADMIN_USERNAME` | `kasim` |
    | `ADMIN_PASSWORD` | your own password, no quotes |
+
 
    Do not paste a whole command line into one of them. They are only read when the database
    is first created; after that, change passwords inside the app or with
