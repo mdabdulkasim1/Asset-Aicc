@@ -25,8 +25,9 @@ COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
 
-# The database lives here. On a hosting platform, mount a persistent disk at
-# /data, otherwise every redeploy starts with an empty register.
+# The database lives here. Mount a persistent disk at /data - on Railway, a
+# Volume in the service settings - otherwise every deploy starts with an empty
+# register. No VOLUME instruction: hosting platforms manage that themselves.
 RUN mkdir -p /data && chown -R node:node /data /app
 
 USER node
