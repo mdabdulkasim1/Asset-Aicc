@@ -351,10 +351,12 @@ the icon carries shortcuts to *Add Asset*, *Scan / Find* and *Print Labels*.
 
 ### What works away from the network
 
-The screens themselves are kept on the device, so the app still opens when the Wi-Fi drops
-or the office computer is off - it says plainly that it cannot reach the register rather
-than showing a broken page. Asset data is always read live from the server, never from an
-old copy on the phone, because a stale register would be worse than an honest error.
+The screens are kept on the device as a fallback, so the app still opens when the Wi-Fi
+drops or the office computer is off - it says plainly that it cannot reach the register
+rather than showing a broken page. Whenever the server can be reached the screens come from
+it, so an update is in use as soon as it is deployed, and asset data is always read live -
+never from an old copy on the phone, because a stale register would be worse than an honest
+error.
 
 ### On a phone
 

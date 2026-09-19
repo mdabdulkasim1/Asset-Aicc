@@ -1760,6 +1760,18 @@
         /* not fatal - the app simply will not work offline */
       });
     });
+
+    // When a newer version takes over from one already running, pick it up at
+    // once instead of leaving someone looking at the previous one. On the very
+    // first visit nothing is being replaced, so there is nothing to reload -
+    // reloading there would throw away whatever the person was typing.
+    var hadController = !!navigator.serviceWorker.controller;
+    var reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController || reloading) return;
+      reloading = true;
+      location.reload();
+    });
   }
 
   var installPrompt = null;

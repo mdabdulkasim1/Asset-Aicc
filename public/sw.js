@@ -5,7 +5,7 @@
  * because a stale asset register would be worse than an honest error.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `asset-register-${VERSION}`;
 
 const SHELL = [
@@ -69,20 +69,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Everything else: serve the cached copy at once, refresh it in the background
-  // so the next load picks up an update on its own.
+  // Pictures never change once published, so they come from the cache.
+  if (/\.(png|svg|jpg|jpeg|webp|ico)$/i.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        return (
+          cached ||
+          fetch(request).then((response) => {
+            if (response && response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+        );
+      })
+    );
+    return;
+  }
+
+  // The screens themselves come from the server whenever it can be reached, so
+  // an update is in use the moment it is deployed. The cached copy is the
+  // fallback for when there is no network, not the first choice - serving a
+  // saved copy first meant people kept seeing the previous version of the app.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => cached || offlineJson()))
   );
 });
