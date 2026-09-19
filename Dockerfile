@@ -1,5 +1,5 @@
-# Build stage: compiler tools are only needed if a prebuilt better-sqlite3
-# binary is not published for this platform (e.g. arm64 servers).
+# Dependencies are installed in their own stage. The compilers are only needed
+# if a prebuilt better-sqlite3 binary is not published for the platform.
 FROM node:22-bookworm-slim AS deps
 
 RUN apt-get update \
@@ -10,13 +10,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-# Runtime stage
 FROM node:22-bookworm-slim
 
-ENV NODE_ENV=production \
-    PORT=3000 \
-    HOST=0.0.0.0 \
-    DATA_DIR=/data
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+ENV DATA_DIR=/data
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -26,14 +25,11 @@ COPY src ./src
 COPY public ./public
 COPY scripts ./scripts
 
-# The database lives on a volume so it survives image rebuilds.
+# The database lives here. On a hosting platform, mount a persistent disk at
+# /data, otherwise every redeploy starts with an empty register.
 RUN mkdir -p /data && chown -R node:node /data /app
-VOLUME ["/data"]
 
 USER node
 EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=4s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "server.js"]

@@ -244,6 +244,30 @@ their machines, only a browser. If they cannot reach it, allow Node.js through t
 firewall on the private network, and give that PC a fixed IP address so the link keeps
 working.
 
+### d) Railway (or another platform that builds from the repo)
+
+The repo carries a `Dockerfile` and a `railway.json`, so Railway builds and starts it with
+no extra setup. Two settings matter, and the first one is not optional:
+
+1. **Attach a volume mounted at `/data`.** Railway service → *Settings* → *Volumes* → new
+   volume, mount path `/data`. The whole register is one file inside that folder. Without a
+   volume every deploy starts from an empty register and the previous assets are gone.
+2. **Set the admin login before the first start** - service → *Variables* →
+   `ADMIN_USERNAME` and `ADMIN_PASSWORD`. Otherwise the first password is printed in the
+   deploy logs, where anyone with access to the project can read it. These are only read
+   when the database is created.
+
+`PORT` is provided by the platform and picked up on its own. The platform serves the site
+over https, so **skip `npm run make-cert` there** - installing the app on phones works
+straight away (section 9).
+
+Anything on the public internet is reachable by anyone who has the link: the register asks
+for a password and slows down repeated wrong attempts, but give the admin account a strong
+password and create a separate login per person.
+
+For backups on a hosted setup, run `npm run backup -- /data/backups` from the platform's
+console, and keep a CSV export (section 1) off the platform as well.
+
 ### Reaching it from outside the office
 
 Only expose it with HTTPS in front, otherwise passwords travel in the clear. A ready nginx
