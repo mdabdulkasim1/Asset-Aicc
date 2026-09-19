@@ -379,6 +379,63 @@ td.mono {
 .scan-box { display: flex; gap: 10px; }
 .scan-box input { font-size: 20px; font-family: "Consolas", ui-monospace, monospace; letter-spacing: .06em; }
 
+/* ---------- modal dialog ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 16px 24px;
+  background: rgba(12, 24, 38, .45);
+  overflow-y: auto;
+}
+
+.modal {
+  width: 100%;
+  max-width: 430px;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h3 { margin: 0; font-size: 15.5px; }
+
+.modal-close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.modal-close:hover { background: var(--surface-2); color: var(--text); }
+.modal-body { padding: 16px; }
+.modal-body .field { margin-bottom: 12px; }
+
+.copy-row { display: flex; gap: 8px; }
+.copy-row input {
+  font-family: "Consolas", ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
 /* ---------- label preview and printing ---------- */
 
 .label-preview-area { display: flex; flex-wrap: wrap; gap: 10px; }

@@ -104,8 +104,13 @@ router.post('/:id/password', (req, res) => {
   const invalid = validatePassword(password);
   if (invalid) return res.status(400).json({ error: invalid });
 
-  db.prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?').run(
+  // The admin may hand over a password the user keeps, but asking them to
+  // choose their own is the default.
+  const mustChange = req.body.must_change_password === false ? 0 : 1;
+
+  db.prepare('UPDATE users SET password_hash = ?, must_change_password = ? WHERE id = ?').run(
     hashPassword(password),
+    mustChange,
     id
   );
   logActivity(req.user.id, 'reset-password', 'user', id, user.username);

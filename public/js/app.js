@@ -121,17 +121,26 @@
     );
   }
 
+  function setPasswordVisible(inputId, visible) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var button = document.querySelector('.pw-eye[data-for="' + inputId + '"]');
+    input.type = visible ? 'text' : 'password';
+    if (button) {
+      button.innerHTML = visible ? EYE_HIDE : EYE_SHOW;
+      button.setAttribute('aria-pressed', visible ? 'true' : 'false');
+      button.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+    }
+  }
+
   // One listener for every eye button on every screen, including the sign-in card.
   document.addEventListener('click', function (event) {
     var button = event.target.closest && event.target.closest('.pw-eye');
     if (!button) return;
-    var input = document.getElementById(button.getAttribute('data-for'));
+    var id = button.getAttribute('data-for');
+    var input = document.getElementById(id);
     if (!input) return;
-    var reveal = input.type === 'password';
-    input.type = reveal ? 'text' : 'password';
-    button.innerHTML = reveal ? EYE_HIDE : EYE_SHOW;
-    button.setAttribute('aria-pressed', reveal ? 'true' : 'false');
-    button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+    setPasswordVisible(id, input.type === 'password');
     input.focus();
   });
 
@@ -191,6 +200,75 @@
         );
       })
       .join('');
+  }
+
+  /* ------------------------------------------------------------------ modal */
+
+  function closeModal() {
+    var open = document.querySelector('.modal-backdrop');
+    if (open) open.remove();
+    document.removeEventListener('keydown', modalKeydown);
+  }
+
+  function modalKeydown(event) {
+    if (event.key === 'Escape') closeModal();
+  }
+
+  /** Opens a dialog and returns it, so the caller can wire up its buttons. */
+  function openModal(title, bodyHtml) {
+    closeModal();
+    var backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
+      '<div class="modal-head"><h3>' + esc(title) + '</h3>' +
+      '<button type="button" class="modal-close" aria-label="Close">&times;</button></div>' +
+      '<div class="modal-body">' + bodyHtml + '</div></div>';
+
+    backdrop.addEventListener('click', function (event) {
+      if (event.target === backdrop || event.target.closest('.modal-close')) closeModal();
+    });
+    backdrop.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+        event.preventDefault();
+        var submit = backdrop.querySelector('[data-default-action]');
+        if (submit) submit.click();
+      }
+    });
+
+    document.body.appendChild(backdrop);
+    document.addEventListener('keydown', modalKeydown);
+    var first = backdrop.querySelector('input:not([readonly]), button');
+    if (first) first.focus();
+    return backdrop;
+  }
+
+  /** Same readable shape as the reset-password command line tool. */
+  function generatePassword() {
+    var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    var bytes = new Uint8Array(10);
+    (window.crypto || window.msCrypto).getRandomValues(bytes);
+    var out = '';
+    for (var i = 0; i < bytes.length; i++) {
+      if (i === 5) out += '-';
+      out += alphabet[bytes[i] % alphabet.length];
+    }
+    return out;
+  }
+
+  /** Clipboard API needs a secure page, so fall back to selecting the box. */
+  function copyFrom(inputId) {
+    var input = document.getElementById(inputId);
+    if (!input) return Promise.reject(new Error('Nothing to copy.'));
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(input.value);
+    }
+    input.focus();
+    input.select();
+    input.setSelectionRange(0, 99999);
+    return document.execCommand('copy')
+      ? Promise.resolve()
+      : Promise.reject(new Error('Press Ctrl+C to copy.'));
   }
 
   /* ----------------------------------------------------------------- layout */
@@ -1199,6 +1277,88 @@
 
   /* ----------------------------------------------------------------- users */
 
+  /** Admin sets a new password for someone who has lost theirs. */
+  function openPasswordReset(id, username) {
+    var modal = openModal(
+      'Reset password for ' + username,
+      '<div id="rp-error" class="alert error hidden"></div>' +
+        passwordField('rp-new', 'New password', { required: true, help: 'At least 6 characters.' }) +
+        passwordField('rp-confirm', 'Repeat password', { required: true }) +
+        '<label class="checkline" style="margin-bottom:14px">' +
+        '<input type="checkbox" id="rp-force" checked> Ask them to choose their own at next sign-in' +
+        '</label>' +
+        '<div class="toolbar">' +
+        '<button class="btn ghost" type="button" id="rp-generate">Generate</button>' +
+        '<span style="flex:1"></span>' +
+        '<button class="btn" type="button" id="rp-save" data-default-action>Set password</button>' +
+        '<button class="btn ghost" type="button" id="rp-cancel">Cancel</button>' +
+        '</div>'
+    );
+
+    var errorBox = modal.querySelector('#rp-error');
+
+    var showError = function (message) {
+      errorBox.textContent = message;
+      errorBox.className = 'alert error';
+    };
+
+    var clearError = function () {
+      errorBox.className = 'alert error hidden';
+    };
+
+    on('#rp-cancel', 'click', closeModal, modal);
+    on('#rp-new, #rp-confirm', 'input', clearError, modal);
+
+    on('#rp-generate', 'click', function () {
+      clearError();
+      var password = generatePassword();
+      modal.querySelector('#rp-new').value = password;
+      modal.querySelector('#rp-confirm').value = password;
+      setPasswordVisible('rp-new', true);
+      setPasswordVisible('rp-confirm', true);
+    }, modal);
+
+    on('#rp-save', 'click', function () {
+      var password = modal.querySelector('#rp-new').value;
+      if (password !== modal.querySelector('#rp-confirm').value) {
+        return showError('The two passwords do not match.');
+      }
+      if (password.length < 6) return showError('Password must be at least 6 characters long.');
+
+      window.api
+        .post('/api/users/' + id + '/password', {
+          password: password,
+          must_change_password: modal.querySelector('#rp-force').checked,
+        })
+        .then(function () {
+          // Show it once more, so the admin can pass it on before closing.
+          modal.querySelector('.modal-body').innerHTML =
+            '<div class="alert ok">Password set for ' + esc(username) + '.</div>' +
+            '<div class="field"><label for="rp-result">Give them this password</label>' +
+            '<div class="copy-row"><input id="rp-result" readonly value="' + esc(password) + '">' +
+            '<button class="btn secondary" type="button" id="rp-copy">Copy</button></div></div>' +
+            '<div class="toolbar"><span style="flex:1"></span>' +
+            '<button class="btn" type="button" id="rp-done" data-default-action>Done</button></div>';
+
+          on('#rp-copy', 'click', function () {
+            copyFrom('rp-result').then(
+              function () {
+                toast('Password copied.');
+              },
+              function (error) {
+                toast(error.message, true);
+              }
+            );
+          }, modal);
+          on('#rp-done', 'click', closeModal, modal);
+          modal.querySelector('#rp-done').focus();
+        })
+        .catch(function (error) {
+          showError(error.message);
+        });
+    }, modal);
+  }
+
   function viewUsers() {
     if (!can('admin')) {
       view.innerHTML = '<div class="card"><div class="empty">Only the admin manages logins.</div></div>';
@@ -1265,12 +1425,10 @@
       });
 
       on('.u-pass', 'click', function (e) {
-        var id = e.currentTarget.getAttribute('data-id');
-        var password = prompt('New password for ' + e.currentTarget.getAttribute('data-name') + ':');
-        if (!password) return;
-        window.api.post('/api/users/' + id + '/password', { password: password }).then(function () {
-          toast('Password reset. Ask them to sign in with it.');
-        }, fail);
+        openPasswordReset(
+          e.currentTarget.getAttribute('data-id'),
+          e.currentTarget.getAttribute('data-name')
+        );
       });
 
       on('.u-toggle', 'click', function (e) {
