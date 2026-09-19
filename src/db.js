@@ -236,6 +236,51 @@ const DEFAULT_CATEGORIES = [
   ['OTH', 'Other', 'General'],
 ];
 
+const DEFAULT_ADMIN_USERNAME = 'admin';
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
+const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,32}$/;
+
+/**
+ * Reads the first administrator login from the environment, refusing anything
+ * that cannot be typed into the sign-in box. A hosting dashboard makes it easy
+ * to paste a whole command line into one variable by mistake; falling back to
+ * the default and saying so beats creating an account nobody can sign in to.
+ */
+function firstAdminLogin() {
+  const rawUser = (process.env.ADMIN_USERNAME || '').trim();
+  const rawPassword = process.env.ADMIN_PASSWORD || '';
+  const warn = [];
+
+  let username = DEFAULT_ADMIN_USERNAME;
+  if (rawUser && USERNAME_PATTERN.test(rawUser)) {
+    username = rawUser;
+  } else if (rawUser) {
+    warn.push(
+      `ADMIN_USERNAME "${rawUser}" is not a usable username (3-32 letters, numbers, dot, ` +
+        `dash or underscore - no spaces), so "${DEFAULT_ADMIN_USERNAME}" was used instead.`
+    );
+    if (/\s/.test(rawUser)) {
+      warn.push('It looks like a whole command was pasted into one variable. Set');
+      warn.push('ADMIN_USERNAME and ADMIN_PASSWORD as two separate variables, values only.');
+    }
+  }
+
+  let password = DEFAULT_ADMIN_PASSWORD;
+  if (rawPassword.length >= 6) {
+    password = rawPassword;
+  } else if (rawPassword) {
+    warn.push('ADMIN_PASSWORD is shorter than 6 characters, so the default password was used.');
+  }
+
+  if (warn.length) {
+    console.warn('----------------------------------------------------------');
+    warn.forEach((line) => console.warn(` ! ${line}`));
+    console.warn('----------------------------------------------------------');
+  }
+
+  return { username, password };
+}
+
 function seed() {
   const insCompany = db.prepare('INSERT OR IGNORE INTO companies (code, name) VALUES (?, ?)');
   const insCategory = db.prepare(
@@ -248,18 +293,22 @@ function seed() {
 
   const haveAdmin = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'").get().n;
   if (!haveAdmin) {
-    const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    const { username, password } = firstAdminLogin();
     db.prepare(
       `INSERT INTO users (username, full_name, password_hash, role, must_change_password)
        VALUES (?, ?, ?, 'admin', ?)`
-    ).run(username, 'Administrator', bcrypt.hashSync(password, 10), process.env.ADMIN_PASSWORD ? 0 : 1);
+    ).run(
+      username,
+      'Administrator',
+      bcrypt.hashSync(password, 10),
+      password === DEFAULT_ADMIN_PASSWORD ? 1 : 0
+    );
 
     console.log('----------------------------------------------------------');
     console.log(' First run: administrator account created');
     console.log(`   username : ${username}`);
     console.log(`   password : ${password}`);
-    if (!process.env.ADMIN_PASSWORD) {
+    if (password === DEFAULT_ADMIN_PASSWORD) {
       console.log('   You will be asked to change this password at first login.');
     }
     console.log('----------------------------------------------------------');

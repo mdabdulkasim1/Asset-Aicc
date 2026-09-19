@@ -252,10 +252,18 @@ no extra setup. Two settings matter, and the first one is not optional:
 1. **Attach a volume mounted at `/data`.** Railway service → *Settings* → *Volumes* → new
    volume, mount path `/data`. The whole register is one file inside that folder. Without a
    volume every deploy starts from an empty register and the previous assets are gone.
-2. **Set the admin login before the first start** - service → *Variables* →
-   `ADMIN_USERNAME` and `ADMIN_PASSWORD`. Otherwise the first password is printed in the
-   deploy logs, where anyone with access to the project can read it. These are only read
-   when the database is created.
+2. **Set the admin login before the first start** - service → *Variables* → **two separate
+   variables**, each holding only its value:
+
+   | Variable | Value |
+   | --- | --- |
+   | `ADMIN_USERNAME` | `kasim` |
+   | `ADMIN_PASSWORD` | your own password, no quotes |
+
+   Do not paste a whole command line into one of them. They are only read when the database
+   is first created; after that, change passwords inside the app or with
+   `npm run reset-password`. Without them the first password is printed in the deploy logs,
+   where anyone with access to the project can read it.
 
 `PORT` is provided by the platform and picked up on its own. The platform serves the site
 over https, so **skip `npm run make-cert` there** - installing the app on phones works
