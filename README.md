@@ -15,8 +15,8 @@ and sees, at a glance, how many assets the group holds and where they are.
 - **Full entry form** - name of asset, category, unique no, asset code, brand, model,
   serial no, quantity, date of purchase, cost, vendor, invoice, warranty, handover to,
   handover date, currently used by, department, location, condition, status and remarks.
-- **83 ready-made categories** covering office/IT, furniture, school items, construction
-  plant and tools, vehicles and electrical. Add your own at any time.
+- **99 ready-made categories** covering office/IT, office furniture and fixtures, school
+  items, construction plant and tools, vehicles and electrical. Add your own at any time.
 - **Barcode sticker** (Code 128) sized exactly 50 x 25 mm, printed one per page for a
   label roll printer. Print one, print a batch, or print every sticker not yet printed.
 - **Scan / Find** page: scan a sticker with any USB barcode reader and the asset opens,
